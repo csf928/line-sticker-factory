@@ -72,7 +72,8 @@
         
         .var-highlight { color: #f87171; font-weight: bold; background-color: rgba(254, 242, 242, 0.1); padding: 0 4px; border-radius: 4px; }
         .fixed-val { font-weight: bold; color: #38bdf8; } 
-        .black-highlight { color: #000000; background-color: #fbbf24; font-weight: bold; padding: 2px 4px; border-radius: 4px; } 
+        /* Modified: Removed background color as requested */
+        .no-highlight { color: inherit; font-weight: normal; } 
     </style>
 </head>
 <body>
@@ -81,7 +82,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // --- Icons (Unified Naming) ---
+        // --- Icons ---
         const Icon = ({ children, className, spin, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${className || ''} ${spin ? 'animate-spin' : ''}`} {...props}>{children}</svg>
         );
@@ -179,13 +180,8 @@
             const [step, setStep] = useState(1); 
             const [isProcessing, setIsProcessing] = useState(false);
             const [processedCount, setProcessedCount] = useState(0);
-            
-            // Settings Panel visibility (Default closed)
             const [showSettings, setShowSettings] = useState(false); 
-            
-            // Missing state added here:
             const [showAdvanced, setShowAdvanced] = useState(true);
-
             const [showPromptGuide, setShowPromptGuide] = useState(true); 
             const [copySuccess, setCopySuccess] = useState(false);
             const [activeTheme, setActiveTheme] = useState('daily');
@@ -407,7 +403,7 @@
                         <ul>
                             <li>語言：<span className="var-highlight">【台灣繁體中文】</span></li>
                             <li>文字內容：<span className="var-highlight">【{theme.texts}】</span></li>
-                            <li>字型風格：<span className="black-highlight">【可愛 Q 版字型，顏色鮮豔、易讀，多色彩混合，絕對禁止使用任何綠色（包含深綠、淺綠、螢光綠、藍綠）與黑色，因為會導致去背錯誤。請改用紅、藍、紫、橘、黃等高對比色彩。】</span></li>
+                            <li>字型風格：<span className="no-highlight">【可愛 Q 版字型，顏色鮮豔、易讀，多色彩混合，絕對禁止使用任何綠色（包含深綠、淺綠、螢光綠、藍綠）與黑色，因為會導致去背錯誤。請改用紅、藍、紫、橘、黃等高對比色彩。】</span></li>
                             <li>排版：文字大小約佔單張貼圖 1/3，文字可適度壓在衣服邊角等非重要區域，不能遮臉。</li>
                         </ul>
                         <h2>[表情與動作設計]</h2>
@@ -458,8 +454,20 @@
 
                     <div className={`transition-opacity duration-500 ${step !== 1 ? 'opacity-0 hidden' : 'opacity-100'}`}>
                         <div className="bg-slate-800 rounded-3xl shadow-lg border border-slate-700 p-10 text-center mb-8">
-                            <h2 className="text-2xl font-bold text-white mb-2">上傳您的貼圖原始檔</h2>
-                            <p className="text-slate-400 mb-6">請上傳 AI 生成的 4x3 網格圖 (JPG/PNG)。</p>
+                            <h2 className="text-2xl font-bold text-white mb-4">上傳您的貼圖原始檔</h2>
+                            
+                            {/* UPDATED: Detailed Instructions */}
+                            <div className="text-slate-400 mb-8 text-sm leading-relaxed max-w-3xl mx-auto bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                <p className="mb-2 font-medium text-white">請上傳 AI 生成的 4x3 網格圖 (JPG/PNG)，圖片需要符合以下規格：</p>
+                                <ul className="text-left list-none space-y-1 mb-4 pl-4 md:pl-12">
+                                    <li>(1) 整體為 4 × 3 佈局，共 12 張貼圖，總尺寸：<span className="text-sky-400 font-mono">1480 × 960 px</span>。</li>
+                                    <li>(2) 每張小圖約 370 × 320 px（自動等比縮放填滿排列）。每張貼圖四周預留約 0.2cm。</li>
+                                </ul>
+                                <p className="text-yellow-400 font-bold border-t border-slate-700 pt-3 mt-2">
+                                    💡 可以參考下方生圖【AI 提示詞大師】先生成圖片，再使用【Line 貼圖自動化助手】進行加工。
+                                </p>
+                            </div>
+
                             <div className="relative group w-full max-w-2xl mx-auto">
                                 <div className="border-2 border-dashed border-slate-600 rounded-2xl h-64 flex flex-col items-center justify-center bg-slate-900 group-hover:border-line group-hover:bg-slate-800 transition-all cursor-pointer overflow-hidden relative">
                                     <input type="file" accept="image/*" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
@@ -521,6 +529,7 @@
                             </div>
 
                             <div className="lg:col-span-2 bg-slate-800/80 p-6 rounded-3xl border border-slate-700 h-fit space-y-6 text-slate-300">
+                                <h3 className="text-xl font-bold text-white mb-4 border-b border-slate-600 pb-3">【Line 貼圖自動化助手 步驟說明】</h3>
                                 <div className="space-y-4">
                                     <div>
                                         <div className="font-bold text-line text-lg mb-1">Step 1：先把你的貼圖「生」出來！</div>
@@ -624,19 +633,22 @@
                     </div>
 
                     <div className={`step-card bg-slate-800 rounded-3xl shadow-lg border border-slate-700 p-8 mb-8 ${step !== 3 && 'hidden'}`}>
-                         <div className="flex flex-col xl:flex-row justify-between items-center mb-8 gap-6 pb-6 border-b border-slate-700">
+                         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6 pb-6 border-b border-slate-700">
                             <div className="flex-1">
                                 <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-2"><IconCheckCircle className="text-line"/>設定與打包</h2>
-                                <p className="text-slate-400 text-sm">請勾選主圖(Main)與標籤圖(Tab)。</p>
-                            </div>
-                            <div className="flex flex-col items-end gap-3 w-full xl:w-auto">
-                                <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-xl text-xs text-yellow-200 max-w-lg">
-                                    <div className="font-bold flex items-center gap-1 mb-1 text-yellow-400"><IconInfo className="w-3 h-3"/> 下載前記得先做兩件小事：</div>
-                                    <ul className="list-disc pl-4 space-y-1 opacity-90">
+                                <p className="text-slate-400 text-sm mb-3">請勾選主圖(Main)與標籤圖(Tab)。</p>
+                                
+                                {/* MOVED & RESIZED: Tip Box now here */}
+                                <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-xl text-lg text-yellow-200 max-w-2xl mt-2">
+                                    <div className="font-bold flex items-center gap-2 mb-2 text-yellow-400"><IconInfo className="w-5 h-5"/> 下載前記得先做兩件小事：</div>
+                                    <ul className="list-disc pl-5 space-y-2 opacity-90 text-base">
                                         <li>選擇 <span className="text-white font-bold">main / tab 封面圖</span>：挑一張最能代表你角色靈魂的封面圖，按一下就設定完成！</li>
                                         <li>設定 <span className="text-white font-bold">檔名起始編號</span>：第二組貼圖請改為 13，下載後 40 張貼圖自動排隊，完全不撞號 ✨</li>
                                     </ul>
                                 </div>
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-3 w-full xl:w-auto mt-6 xl:mt-0">
                                 <div className="flex items-center gap-3 w-full justify-end">
                                     <div className="bg-slate-900 px-4 py-3 rounded-xl border border-slate-600 flex items-center gap-3">
                                         <div className="flex flex-col"><span className="text-xs font-bold text-slate-400 flex items-center gap-1"><IconHash className="w-3 h-3"/> 起始編號</span><span className="text-[10px] text-slate-500">接續上一批次</span></div>
@@ -676,4 +688,3 @@
     </script>
 </body>
 </html>
-```
