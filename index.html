@@ -12,22 +12,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Comforter+Brush&display=swap');
         
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
+            /* 專業深色背景 */
             background-color: #0f172a; /* Slate 900 */
             color: #f8fafc;
         }
 
-        /* LINE Brand Colors */
+        /* LINE Brand Colors - High Contrast for Dark Mode */
         .text-line { color: #06C755; }
         .bg-line { background-color: #06C755; }
         .bg-line:hover { background-color: #05b34c; } 
         .border-line { border-color: #06C755; }
         .ring-line { --tw-ring-color: #06C755; }
 
-        /* Checkerboard pattern */
+        /* Checkerboard pattern for transparency */
         .grid-bg { 
             background-image: linear-gradient(45deg, #334155 25%, transparent 25%), 
                               linear-gradient(-45deg, #334155 25%, transparent 25%), 
@@ -42,6 +42,7 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
         }
         
+        /* Custom Radio in Dark Mode */
         .custom-radio:checked + div {
             border-color: #06C755;
             background-color: rgba(6, 199, 85, 0.1);
@@ -66,14 +67,15 @@
             opacity: 1;
         }
 
-        /* Markdown Style */
+        /* Markdown Style for Dark Mode */
         .prompt-content h2 { font-weight: 700; font-size: 1.1em; margin-bottom: 0.5em; color: #e2e8f0; border-bottom: 1px solid #334155; padding-bottom: 0.2em; margin-top: 1em; }
         .prompt-content h2:first-child { margin-top: 0; }
         .prompt-content p { margin-bottom: 0.5em; line-height: 1.6; font-size: 0.9em; color: #94a3b8; }
         .prompt-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.5em; font-size: 0.9em; color: #94a3b8; }
+        
+        /* Highlights in Dark Mode */
         .var-highlight { color: #f87171; font-weight: bold; background-color: rgba(254, 242, 242, 0.1); padding: 0 4px; border-radius: 4px; }
         .fixed-val { font-weight: bold; color: #38bdf8; } 
-        /* 黑色字體 highlight */
         .black-highlight { color: #000000; background-color: #fbbf24; font-weight: bold; padding: 2px 4px; border-radius: 4px; } 
     </style>
 </head>
@@ -83,7 +85,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // --- Icons (Renamed to avoid conflicts) ---
+        // --- Icons (Unified Naming to Prevent Crash) ---
         const Icon = ({ children, className, spin, ...props }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${className || ''} ${spin ? 'animate-spin' : ''}`} {...props}>{children}</svg>
         );
@@ -105,16 +107,8 @@
         const IconCrop = (props) => <Icon {...props}><path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/></Icon>;
         const IconInfo = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></Icon>;
 
-        // --- Meiko Logo Component (SVG) - No external image required ---
-        const MeikoLogo = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-8 h-8 rounded-full shadow-sm bg-[#bf0000]">
-                <circle cx="50" cy="50" r="50" fill="#bf0000"/>
-                <text x="18" y="78" fontFamily="'Comforter Brush', cursive" fontSize="65" fill="white" fontWeight="bold">M</text>
-                <text x="50" y="68" fontFamily="'Noto Sans TC', sans-serif" fontSize="24" fill="white" fontWeight="900">eiko</text>
-                <text x="50" y="42" fontFamily="'Noto Sans TC', sans-serif" fontSize="11" fill="white" fontWeight="500">微課頻道</text>
-                <path d="M 22 82 Q 55 95 85 68" fill="none" stroke="#FFD700" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-        );
+        // --- FIXED LOGO (Using Notion URL) ---
+        const logoSrc = "https://rain-galley-248.notion.site/image/attachment%3A1a4404e1-e6b1-4f29-a495-123224c6135a%3AMeiko_logo.png?table=block&id=2c04c228-35e5-80d2-b534-f270fb01613d&spaceId=cf48a189-fd68-4fe6-a35c-bf6538001b35&width=770&userId=&cache=v2";
 
         // --- WEB WORKER CODE ---
         const workerScript = `
@@ -127,33 +121,22 @@
             ctx.drawImage(imageBitmap, 0, 0);
             const imgData = ctx.getImageData(0, 0, w, h);
             const data = imgData.data;
-            
             const tr = parseInt(targetColor.slice(1, 3), 16);
             const tg = parseInt(targetColor.slice(3, 5), 16);
             const tb = parseInt(targetColor.slice(5, 7), 16);
             const distThreshold = tolerance * 4.42; 
             const ramp = Math.max(1, smoothness * 5); 
-
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
-                const dist = Math.sqrt(
-                    (r - tr) * (r - tr) + 
-                    (g - tg) * (g - tg) + 
-                    (b - tb) * (b - tb)
-                );
+                const dist = Math.sqrt((r - tr) * (r - tr) + (g - tg) * (g - tg) + (b - tb) * (b - tb));
                 let alpha = 255;
-                if (dist < distThreshold) {
-                    alpha = 0; 
-                } else if (dist < distThreshold + ramp) {
-                    alpha = ((dist - distThreshold) / ramp) * 255;
-                }
+                if (dist < distThreshold) alpha = 0; 
+                else if (dist < distThreshold + ramp) alpha = ((dist - distThreshold) / ramp) * 255;
                 if (despill && alpha > 0) {
                     if (targetColor.toLowerCase() === '#00ff00') {
-                        if (g > r && g > b) {
-                            data[i+1] = (r + b) / 2; 
-                        }
+                        if (g > r && g > b) data[i+1] = (r + b) / 2; 
                     }
                 }
                 data[i + 3] = alpha;
@@ -162,9 +145,7 @@
             canvas.convertToBlob({ type: 'image/png' }).then(blob => {
                 const reader = new FileReader();
                 reader.readAsDataURL(blob);
-                reader.onloadend = () => {
-                    self.postMessage({ id, dataUrl: reader.result });
-                };
+                reader.onloadend = () => self.postMessage({ id, dataUrl: reader.result });
             });
         };
         `;
@@ -174,48 +155,13 @@
 
         // --- PROMPT DATA ---
         const PROMPT_THEMES = {
-            daily: { 
-                label: '日常用語', 
-                texts: '早安、晚安、謝謝、不客氣、對不起、沒問題、好的、收到、拜託、辛苦了、OK、等等',
-                emotions: '喜、怒、哀、樂、驚訝、無語、放空、大哭',
-                actions: '謝謝配雙手合十、OK比手勢、早安揮手、發呆流口水'
-            },
-            greet: { 
-                label: '打招呼', 
-                texts: 'Hello、Hi、早安、午安、晚安、你好、吃飽沒、好久不見、初次見面、歡迎、有空嗎、掰掰',
-                emotions: '熱情、微笑、眨眼、期待、害羞、友善',
-                actions: '揮手致意、90度鞠躬、從角落探頭、比手指愛心、拿著大聲公'
-            },
-            holiday: { 
-                label: '節日祝福', 
-                texts: '新年快樂、恭喜發財、生日快樂、聖誕快樂、情人節快樂、中秋快樂、母親節快樂、父親節快樂、端午安康、萬聖節快樂、Happy New Year、紅包拿來',
-                emotions: '喜氣洋洋、興奮、溫馨、大笑、感動、派對臉',
-                actions: '雙手拿紅包、點燃鞭炮、捧著生日蛋糕、送出禮物盒、舉杯慶祝'
-            },
-            response: { 
-                label: '回應篇', 
-                texts: '真的假的、笑死、確?、好喔、??、!!!、無言、傻眼、厲害、佩服、+1、路過',
-                emotions: '震驚到變形、翻白眼、懷疑眼神、豎起大拇指、敷衍假笑',
-                actions: '比讚、雙手打叉(NG)、單手扶額頭、吃瓜看戲、比出 OK 手勢'
-            },
-            work: { 
-                label: '上班族', 
-                texts: '收到、馬上改、開會中、加班、準時下班、心累、報告長官、辛苦了、求放過、薪水呢、不想上班、加油',
-                emotions: '眼神死、崩潰大哭、職業假笑、黑眼圈深重、燃燒鬥志',
-                actions: '瘋狂敲鍵盤、吊點滴喝咖啡、趴在桌上靈魂出竅、標準敬禮、舉白旗投降'
-            },
-            couple: { 
-                label: '老公老婆', 
-                texts: '愛你、想你、抱抱、親親、寶貝、老公、老婆、在幹嘛、快回家、買給我、原諒我、啾咪',
-                emotions: '害羞臉紅、色瞇瞇、撒嬌水汪汪大眼、生氣鼓臉、陶醉',
-                actions: '抱緊處理、發射飛吻、跪算盤謝罪、摸頭殺、壁咚'
-            },
-            meme: { 
-                label: '迷因搞笑', 
-                texts: '是在哈囉、我就爛、阿姨我不想努力了、像極了愛情、可憐哪、嚇到吃手手、黑人問號、本斥但大、真香、歸剛欸、突破盲腸、怕',
-                emotions: '極度嘲諷臉、黑人問號臉、猥瑣笑容、崩壞顏藝、鄙視眼神',
-                actions: '攤手無奈、指指點點、戴墨鏡耍帥、拿著鹹魚攻擊、謎之舞步'
-            }
+            daily: { label: '日常用語', texts: '早安、晚安、謝謝、不客氣、對不起、沒問題、好的、收到、拜託、辛苦了、OK、等等', emotions: '喜、怒、哀、樂、驚訝、無語、放空、大哭', actions: '謝謝配雙手合十、OK比手勢、早安揮手、發呆流口水' },
+            greet: { label: '打招呼', texts: 'Hello、Hi、早安、午安、晚安、你好、吃飽沒、好久不見、初次見面、歡迎、有空嗎、掰掰', emotions: '熱情、微笑、眨眼、期待、害羞、友善', actions: '揮手致意、90度鞠躬、從角落探頭、比手指愛心、拿著大聲公' },
+            holiday: { label: '節日祝福', texts: '新年快樂、恭喜發財、生日快樂、聖誕快樂、情人節快樂、中秋快樂、母親節快樂、父親節快樂、端午安康、萬聖節快樂、Happy New Year、紅包拿來', emotions: '喜氣洋洋、興奮、溫馨、大笑、感動、派對臉', actions: '雙手拿紅包、點燃鞭炮、捧著生日蛋糕、送出禮物盒、舉杯慶祝' },
+            response: { label: '回應篇', texts: '真的假的、笑死、確?、好喔、??、!!!、無言、傻眼、厲害、佩服、+1、路過', emotions: '震驚到變形、翻白眼、懷疑眼神、豎起大拇指、敷衍假笑', actions: '比讚、雙手打叉(NG)、單手扶額頭、吃瓜看戲、比出 OK 手勢' },
+            work: { label: '上班族', texts: '收到、馬上改、開會中、加班、準時下班、心累、報告長官、辛苦了、求放過、薪水呢、不想上班、加油', emotions: '眼神死、崩潰大哭、職業假笑、黑眼圈深重、燃燒鬥志', actions: '瘋狂敲鍵盤、吊點滴喝咖啡、趴在桌上靈魂出竅、標準敬禮、舉白旗投降' },
+            couple: { label: '老公老婆', texts: '愛你、想你、抱抱、親親、寶貝、老公、老婆、在幹嘛、快回家、買給我、原諒我、啾咪', emotions: '害羞臉紅、色瞇瞇、撒嬌水汪汪大眼、生氣鼓臉、陶醉', actions: '抱緊處理、發射飛吻、跪算盤謝罪、摸頭殺、壁咚' },
+            meme: { label: '迷因搞笑', texts: '是在哈囉、我就爛、阿姨我不想努力了、像極了愛情、可憐哪、嚇到吃手手、黑人問號、本斥但大、真香、歸剛欸、突破盲腸、怕', emotions: '極度嘲諷臉、黑人問號臉、猥瑣笑容、崩壞顏藝、鄙視眼神', actions: '攤手無奈、指指點點、戴墨鏡耍帥、拿著鹹魚攻擊、謎之舞步' }
         };
 
         const PROMPT_STYLES = {
@@ -231,31 +177,23 @@
             const [originalSheet, setOriginalSheet] = useState(null);
             const [slicedPieces, setSlicedPieces] = useState([]); 
             const [finalImages, setFinalImages] = useState([]); 
-            
             const [mainId, setMainId] = useState(null);
             const [tabId, setTabId] = useState(null);
             const [startNumber, setStartNumber] = useState(1); 
-
             const [step, setStep] = useState(1); 
             const [isProcessing, setIsProcessing] = useState(false);
             const [processedCount, setProcessedCount] = useState(0);
-            
-            // Step 2 Settings Panel visibility (Default closed)
             const [showSettings, setShowSettings] = useState(false); 
-            
             const [showPromptGuide, setShowPromptGuide] = useState(true); 
             const [copySuccess, setCopySuccess] = useState(false);
-            
             const [activeTheme, setActiveTheme] = useState('daily');
             const [activeStyle, setActiveStyle] = useState('qversion');
-            
             const [autoRemoveBg, setAutoRemoveBg] = useState(true);
             const [targetColorHex, setTargetColorHex] = useState("#00ff00");
             const [colorTolerance, setColorTolerance] = useState(30); 
             const [smoothness, setSmoothness] = useState(2); 
             const [despill, setDespill] = useState(true); 
             const [zoomLevel, setZoomLevel] = useState(1.00); 
-
             const workerRef = useRef(null);
 
             useEffect(() => {
@@ -305,38 +243,11 @@
             const getPromptText = () => {
                 const theme = PROMPT_THEMES[activeTheme];
                 const style = PROMPT_STYLES[activeStyle];
-                return `✅ 12 格角色貼圖集｜Prompt 建議
-請參考上傳圖片中的角色，生成 一張包含 12 個不同動作的角色貼圖集。
-
-[角色與風格設定]
-角色一致性：必須完全維持原圖主角的髮型、服裝、五官與整體外觀特徵。
-構圖風格：畫面僅包含「角色 + 文字」，不包含任何場景背景。
-畫風設定：【${style.desc}】。
-貼紙風格（去背友善）：角色與文字外圍皆需加入 粗白色外框（Sticker Style）。背景統一為 #00FF00（純綠色），不可有雜點。
-
-[畫面佈局與尺寸規格]
-整體為 4 × 3 佈局，共 12 張貼圖。總尺寸：1480 × 960 px。
-每張小圖約 370 × 320 px（自動等比縮放填滿排列）。每張貼圖四周預留約 0.2 cm Padding，避免畫面互相黏住。
-鏡頭多樣化：全身 + 半身混合，必須包含正面、側面、俯角等不同視角。
-
-[文字設計]
-語言：【台灣繁體中文】
-文字內容：【${theme.texts}】
-字型風格：【可愛 Q 版字型，顏色鮮豔、易讀，多色彩混合，絕對禁止使用任何綠色（包含深綠、淺綠、螢光綠、藍綠）與黑色，因為會導致去背錯誤。請改用紅、藍、紫、橘、黃等高對比色彩。】
-排版：文字大小約佔單張貼圖 1/3，文字可適度壓在衣服邊角等非重要區域，不能遮臉。
-
-[表情與動作設計]
-表情必須明顯、誇張、情緒豐富：【${theme.emotions}】
-角色動作需與文字情境一致：例如【${theme.actions}】
-12 格皆須為 不同動作與不同表情。
-
-[輸出格式]
-一張大圖，內含 4 × 3 的 12 張貼圖。背景必須為 純綠色 #00FF00。每格角色 + 文字均附上粗白邊。`;
+                return `✅ 12 格角色貼圖集｜Prompt 建議\n請參考上傳圖片中的角色，生成 一張包含 12 個不同動作的角色貼圖集。\n\n[角色與風格設定]\n角色一致性：必須完全維持原圖主角的髮型、服裝、五官與整體外觀特徵。\n構圖風格：畫面僅包含「角色 + 文字」，不包含任何場景背景。\n畫風設定：【${style.desc}】。\n貼紙風格（去背友善）：角色與文字外圍皆需加入 粗白色外框（Sticker Style）。背景統一為 #00FF00（純綠色），不可有雜點。\n\n[畫面佈局與尺寸規格]\n整體為 4 × 3 佈局，共 12 張貼圖。總尺寸：1480 × 960 px。\n每張小圖約 370 × 320 px（自動等比縮放填滿排列）。每張貼圖四周預留約 0.2 cm Padding，避免畫面互相黏住。\n鏡頭多樣化：全身 + 半身混合，必須包含正面、側面、俯角等不同視角。\n\n[文字設計]\n語言：【台灣繁體中文】\n文字內容：【${theme.texts}】\n字型風格：【可愛 Q 版字型，顏色鮮豔、易讀，多色彩混合，絕對禁止使用任何綠色（包含深綠、淺綠、螢光綠、藍綠）與黑色，因為會導致去背錯誤。請改用紅、藍、紫、橘、黃等高對比色彩。】\n排版：文字大小約佔單張貼圖 1/3，文字可適度壓在衣服邊角等非重要區域，不能遮臉。\n\n[表情與動作設計]\n表情必須明顯、誇張、情緒豐富：【${theme.emotions}】\n角色動作需與文字情境一致：例如【${theme.actions}】\n12 格皆須為 不同動作與不同表情。\n\n[輸出格式]\n一張大圖，內含 4 × 3 的 12 張貼圖。背景必須為 純綠色 #00FF00。每格角色 + 文字均附上粗白邊。`;
             };
 
             const handleCopyPrompt = () => {
-                const text = getPromptText();
-                navigator.clipboard.writeText(text).then(() => {
+                navigator.clipboard.writeText(getPromptText()).then(() => {
                     setCopySuccess(true);
                     setTimeout(() => setCopySuccess(false), 2000);
                 });
@@ -378,12 +289,7 @@
 
             const performProcessing = async () => {
                 if (!autoRemoveBg) {
-                    const results = slicedPieces.map(piece => ({
-                        id: piece.id,
-                        dataUrl: piece.previewUrl,
-                        rawSource: null
-                    }));
-                    setFinalImages(results);
+                    setFinalImages(slicedPieces.map(piece => ({ id: piece.id, dataUrl: piece.previewUrl })));
                     setMainId(1);
                     setTabId(1);
                     setStep(3);
@@ -441,18 +347,13 @@
                 });
             };
 
-            const getFileName = (index) => {
-                const num = startNumber + index;
-                return num.toString().padStart(2, '0');
-            };
+            const getFileName = (index) => (startNumber + index).toString().padStart(2, '0');
 
             const downloadZip = async () => {
                 const zip = new JSZip();
-                const promises = finalImages.map(async (img, idx) => {
-                    const fileName = getFileName(idx);
-                    zip.file(`${fileName}.png`, img.dataUrl.split(',')[1], {base64:true});
-                });
-                await Promise.all(promises);
+                await Promise.all(finalImages.map(async (img, idx) => {
+                    zip.file(`${getFileName(idx)}.png`, img.dataUrl.split(',')[1], {base64:true});
+                }));
                 if (mainId) {
                     const mainImg = finalImages.find(img => img.id === mainId);
                     if (mainImg) zip.file("main.png", await resizeImageFromUrl(mainImg.dataUrl, 240, 240), {base64: true});
@@ -530,7 +431,7 @@
                                 Line 貼圖自動化助手
                             </h1>
                             <div className="mt-2 text-sm text-slate-400 font-medium flex flex-row items-center gap-2">
-                                <MeikoLogo />
+                                <img src={logoSrc} alt="Meiko Logo" className="w-8 h-8 rounded-full shadow-sm object-cover border border-slate-600" />
                                 <div className="flex items-center gap-1">
                                     <a href="https://www.youtube.com/@meiko1" target="_blank" className="text-white hover:text-line hover:underline transition-colors font-bold">
                                         Meiko微課頻道
