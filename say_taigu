@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>印尼看護台語學習與溝通卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .playing {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+            transform: scale(0.98);
+            transition: all 0.2s ease;
+        }
+        .speaker-icon {
+            transition: color 0.3s ease;
+        }
+        .playing .speaker-icon {
+            color: #10b981;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="pb-12 text-gray-800">
+
+    <!-- 頂部導航欄 -->
+    <header class="bg-teal-600 text-white shadow-md sticky top-0 z-10">
+        <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+            <h1 class="text-xl font-bold">Belajar Bahasa Taiwan<br><span class="text-sm font-normal text-teal-100">看護台語溝通卡</span></h1>
+            <i class="fas fa-language text-2xl"></i>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 mt-4">
+        <!-- 提示訊息 -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6 rounded shadow-sm text-sm text-yellow-800">
+            <p class="font-bold mb-1"><i class="fas fa-lightbulb mr-1"></i> 播放提示 (Petunjuk):</p>
+            <p>點擊卡片會先播<span class="font-bold">印尼語</span>，再播<span class="font-bold">台語</span>。<br>
+            <span class="text-xs text-gray-500">* 若設備未安裝台語語音包，台語部分可能會自動以國語發音代替。</span></p>
+        </div>
+
+        <!-- 字卡列表容器 -->
+        <div id="card-container" class="space-y-4">
+            <!-- 卡片由 JavaScript 動態生成 -->
+        </div>
+    </main>
+
+    <script>
+        // 詞彙資料庫
+        const phrases = [
+            { 
+                id: 1, 
+                icon: '🍚', 
+                zh: '阿公吃飯', 
+                taigi_hanzi: '阿公食飯', 
+                taigi_ro: 'A-kong tsia̍h-pn̄g', 
+                idn: 'Kakek makan' 
+            },
+            { 
+                id: 2, 
+                icon: '🚽', 
+                zh: '阿公尿尿', 
+                taigi_hanzi: '阿公放尿', 
+                taigi_ro: 'A-kong pàng-jiō', 
+                idn: 'Kakek kencing' 
+            },
+            { 
+                id: 3, 
+                icon: '💊', 
+                zh: '阿公吃藥', 
+                taigi_hanzi: '阿公食藥仔', 
+                taigi_ro: 'A-kong tsia̍h-io̍h-á', 
+                idn: 'Kakek minum obat' 
+            },
+            { 
+                id: 4, 
+                icon: '💧', 
+                zh: '阿公喝水', 
+                taigi_hanzi: '阿公啉水', 
+                taigi_ro: 'A-kong lim-tsuí', 
+                idn: 'Kakek minum air' 
+            },
+            { 
+                id: 5, 
+                icon: '🥛', 
+                zh: '阿公喝牛奶', 
+                taigi_hanzi: '阿公啉牛奶', 
+                taigi_ro: 'A-kong lim gû-ling', 
+                idn: 'Kakek minum susu' 
+            },
+            { 
+                id: 6, 
+                icon: '🍞', 
+                zh: '阿公吃饅頭', 
+                taigi_hanzi: '阿公食饅頭', 
+                taigi_ro: 'A-kong tsia̍h bān-thô', 
+                idn: 'Kakek makan mantau' 
+            },
+            { 
+                id: 7, 
+                icon: '🤒', 
+                zh: '阿公不舒服', 
+                taigi_hanzi: '阿公無爽快', 
+                taigi_ro: 'A-kong bô-sóng-khuài', 
+                idn: 'Kakek tidak enak badan / Kakek sakit' 
+            }
+        ];
+
+        let voices = [];
+        let isPlaying = false; // 防止重複點擊
+
+        // 載入系統語音
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+        }
+        
+        // 確保語音載入
+        loadVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        // 生成卡片 UI
+        const container = document.getElementById('card-container');
+        
+        phrases.forEach(phrase => {
+            const card = document.createElement('div');
+            card.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer active:scale-95 transition-transform duration-100";
+            card.onclick = () => playSequence(phrase, card);
+            
+            card.innerHTML = `
+                <div class="p-4 flex items-center gap-4">
+                    <div class="text-4xl w-12 text-center select-none">${phrase.icon}</div>
+                    
+                    <div class="flex-1">
+                        <!-- 印尼語 -->
+                        <div class="text-teal-700 font-bold text-lg leading-tight mb-1">
+                            ${phrase.idn}
+                        </div>
+                        
+                        <!-- 中文與台語漢字 -->
+                        <div class="text-gray-800 font-medium text-md flex items-center gap-2">
+                            <span>${phrase.zh}</span>
+                            <span class="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-500 border border-gray-200">台: ${phrase.taigi_hanzi}</span>
+                        </div>
+                        
+                        <!-- 台語羅馬拼音 -->
+                        <div class="text-gray-500 text-sm mt-0.5">
+                            🗣️ ${phrase.taigi_ro}
+                        </div>
+                    </div>
+                    
+                    <div class="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center speaker-icon text-teal-600">
+                        <i class="fas fa-volume-up text-lg"></i>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        // 播放流程控制：印尼語 -> 暫停 -> 台語
+        async function playSequence(phrase, cardElement) {
+            // 若正在播放其他音檔則阻止重疊播放
+            if (isPlaying) {
+                window.speechSynthesis.cancel();
+            }
+            
+            isPlaying = true;
+            cardElement.classList.add('playing');
+            
+            try {
+                // 1. 播放印尼語
+                await speakText(phrase.idn, 'id-ID', 0.9);
+                
+                // 2. 暫停 0.6 秒
+                await new Promise(r => setTimeout(r, 600));
+                
+                // 3. 播放台語 (若無 nan-TW 則退回 zh-TW 國語發音)
+                await speakText(phrase.taigi_hanzi, 'nan-TW', 'zh-TW', 0.85);
+                
+            } catch (err) {
+                console.error("播放中斷或出錯", err);
+            } finally {
+                cardElement.classList.remove('playing');
+                isPlaying = false;
+            }
+        }
+
+        // 文字轉語音 (TTS) 核心功能
+        function speakText(text, targetLang, fallbackLang = null, rate = 1.0) {
+            return new Promise((resolve, reject) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // 尋找目標語言的語音包
+                let selectedVoice = voices.find(v => v.lang.toLowerCase().includes(targetLang.toLowerCase()));
+                
+                // 針對台語特別尋找名稱包含 'nan' 或 'Taiwanese' 的語音
+                if (!selectedVoice && targetLang === 'nan-TW') {
+                    selectedVoice = voices.find(v => v.lang.includes('nan') || v.name.includes('Taiwanese'));
+                }
+
+                // 如果找不到，尋找替代語言 (例如退回國語)
+                if (!selectedVoice && fallbackLang) {
+                    selectedVoice = voices.find(v => v.lang.toLowerCase().includes(fallbackLang.toLowerCase()));
+                }
+
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                } else {
+                    utterance.lang = targetLang; // 放棄指定語音包，直接交給瀏覽器決定
+                }
+
+                utterance.rate = rate; // 稍微放慢語速讓學習更清楚
+
+                utterance.onend = () => resolve();
+                utterance.onerror = (e) => resolve(); // 發生錯誤也繼續，避免卡死
+
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+    </script>
+</body>
+</html>
