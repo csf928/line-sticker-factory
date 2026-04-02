@@ -46,8 +46,8 @@
         <!-- 提示訊息 -->
         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6 rounded shadow-sm text-sm text-yellow-800">
             <p class="font-bold mb-1"><i class="fas fa-lightbulb mr-1"></i> 播放提示 (Petunjuk):</p>
-            <p>點擊卡片會先播<span class="font-bold">印尼語</span>，再播<span class="font-bold">台語</span>。<br>
-            <span class="text-xs text-gray-500">* 若設備未安裝台語語音包，台語部分可能會自動以國語發音代替。</span></p>
+            <p>點擊卡片會先播<span class="font-bold">印尼語</span>，再播<span class="font-bold">台語錄音檔</span>。<br>
+            <span class="text-xs text-red-500">* 目前台語使用外部 mp3 檔案，請確認音檔已放入 audio 資料夾中。</span></p>
         </div>
 
         <!-- 字卡列表容器 -->
@@ -57,7 +57,7 @@
     </main>
 
     <script>
-        // 詞彙資料庫
+        // 詞彙資料庫 (加入了 audioUrl 屬性，用來指定您的錄音檔位置)
         const phrases = [
             { 
                 id: 1, 
@@ -65,7 +65,8 @@
                 zh: '阿公吃飯', 
                 taigi_hanzi: '阿公食飯', 
                 taigi_ro: 'A-kong tsia̍h-pn̄g', 
-                idn: 'Kakek makan' 
+                idn: 'Kakek makan',
+                audioUrl: './audio/eat.mp3' // 🎵 在這裡填入您的錄音檔檔名
             },
             { 
                 id: 2, 
@@ -73,7 +74,8 @@
                 zh: '阿公尿尿', 
                 taigi_hanzi: '阿公放尿', 
                 taigi_ro: 'A-kong pàng-jiō', 
-                idn: 'Kakek kencing' 
+                idn: 'Kakek kencing',
+                audioUrl: './audio/wc.mp3'
             },
             { 
                 id: 3, 
@@ -81,7 +83,8 @@
                 zh: '阿公吃藥', 
                 taigi_hanzi: '阿公食藥仔', 
                 taigi_ro: 'A-kong tsia̍h-io̍h-á', 
-                idn: 'Kakek minum obat' 
+                idn: 'Kakek minum obat',
+                audioUrl: './audio/medicien.mp3'
             },
             { 
                 id: 4, 
@@ -89,7 +92,8 @@
                 zh: '阿公喝水', 
                 taigi_hanzi: '阿公啉水', 
                 taigi_ro: 'A-kong lim-tsuí', 
-                idn: 'Kakek minum air' 
+                idn: 'Kakek minum air',
+                audioUrl: './audio/water.mp3'
             },
             { 
                 id: 5, 
@@ -97,7 +101,8 @@
                 zh: '阿公喝牛奶', 
                 taigi_hanzi: '阿公啉牛奶', 
                 taigi_ro: 'A-kong lim gû-ling', 
-                idn: 'Kakek minum susu' 
+                idn: 'Kakek minum susu',
+                audioUrl: './audio/milk.mp3'
             },
             { 
                 id: 6, 
@@ -105,7 +110,8 @@
                 zh: '阿公吃饅頭', 
                 taigi_hanzi: '阿公食饅頭', 
                 taigi_ro: 'A-kong tsia̍h bān-thô', 
-                idn: 'Kakek makan mantau' 
+                idn: 'Kakek makan mantau',
+                audioUrl: './audio/manto.mp3'
             },
             { 
                 id: 7, 
@@ -113,14 +119,34 @@
                 zh: '阿公不舒服', 
                 taigi_hanzi: '阿公無爽快', 
                 taigi_ro: 'A-kong bô-sóng-khuài', 
-                idn: 'Kakek tidak enak badan / Kakek sakit' 
+                idn: 'Kakek tidak enak badan / Kakek sakit',
+                audioUrl: './audio/notgood.mp3'
+            },
+            { 
+                id: 8, 
+                icon: '💉', 
+                zh: '點滴沒了', 
+                taigi_hanzi: '點滴無矣', 
+                taigi_ro: 'Tiám-tih bô--ah', 
+                idn: 'Infusnya habis',
+                audioUrl: './audio/ch_dandi.mp3'
+            },
+            { 
+                id: 9, 
+                icon: '🛌', 
+                zh: '病人不舒服', 
+                taigi_hanzi: '病人無爽快', 
+                taigi_ro: 'Pēnn-lâng bô-sóng-khuài', 
+                idn: 'Pasien tidak enak badan',
+                audioUrl: './audio/ch_sicker.mp3'
             }
         ];
 
         let voices = [];
         let isPlaying = false; // 防止重複點擊
+        let currentAudio = null; // 記錄目前播放的音檔物件
 
-        // 載入系統語音
+        // 載入系統語音 (用於印尼語)
         function loadVoices() {
             voices = window.speechSynthesis.getVoices();
         }
@@ -169,62 +195,77 @@
             container.appendChild(card);
         });
 
-        // 播放流程控制：印尼語 -> 暫停 -> 台語
+        // 播放流程控制：印尼語(系統) -> 暫停 -> 台語(錄音檔)
         async function playSequence(phrase, cardElement) {
-            // 若正在播放其他音檔則阻止重疊播放
+            // 若正在播放其他音檔則阻止重疊播放，並將之前的音軌停止
             if (isPlaying) {
                 window.speechSynthesis.cancel();
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                }
             }
             
             isPlaying = true;
             cardElement.classList.add('playing');
             
             try {
-                // 1. 播放印尼語
+                // 1. 播放印尼語 (保留系統TTS)
                 await speakText(phrase.idn, 'id-ID', 0.9);
                 
                 // 2. 暫停 0.6 秒
                 await new Promise(r => setTimeout(r, 600));
                 
-                // 3. 播放台語 (若無 nan-TW 則退回 zh-TW 國語發音)
-                await speakText(phrase.taigi_hanzi, 'nan-TW', 'zh-TW', 0.85);
+                // 3. 播放台語 (改用真實錄音檔)
+                await playAudioFile(phrase.audioUrl);
                 
             } catch (err) {
                 console.error("播放中斷或出錯", err);
             } finally {
                 cardElement.classList.remove('playing');
                 isPlaying = false;
+                currentAudio = null;
             }
         }
 
-        // 文字轉語音 (TTS) 核心功能
-        function speakText(text, targetLang, fallbackLang = null, rate = 1.0) {
+        // 播放實體錄音檔的函數
+        function playAudioFile(url) {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio(url);
+                currentAudio = audio;
+                
+                audio.onended = () => resolve();
+                
+                // 若找不到音檔或無法播放，顯示警告並結束，避免卡住動畫
+                audio.onerror = (e) => {
+                    console.warn("找不到台語音檔，請確認路徑: " + url);
+                    resolve(); 
+                };
+                
+                audio.play().catch(err => {
+                    console.warn("無法自動播放音檔: ", err);
+                    resolve();
+                });
+            });
+        }
+
+        // 文字轉語音 (TTS) 核心功能 (現在僅負責印尼文)
+        function speakText(text, targetLang, rate = 1.0) {
             return new Promise((resolve, reject) => {
                 const utterance = new SpeechSynthesisUtterance(text);
                 
-                // 尋找目標語言的語音包
                 let selectedVoice = voices.find(v => v.lang.toLowerCase().includes(targetLang.toLowerCase()));
-                
-                // 針對台語特別尋找名稱包含 'nan' 或 'Taiwanese' 的語音
-                if (!selectedVoice && targetLang === 'nan-TW') {
-                    selectedVoice = voices.find(v => v.lang.includes('nan') || v.name.includes('Taiwanese'));
-                }
-
-                // 如果找不到，尋找替代語言 (例如退回國語)
-                if (!selectedVoice && fallbackLang) {
-                    selectedVoice = voices.find(v => v.lang.toLowerCase().includes(fallbackLang.toLowerCase()));
-                }
 
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                 } else {
-                    utterance.lang = targetLang; // 放棄指定語音包，直接交給瀏覽器決定
+                    utterance.lang = targetLang;
                 }
 
-                utterance.rate = rate; // 稍微放慢語速讓學習更清楚
+                utterance.rate = rate; // 稍微放慢語速
 
                 utterance.onend = () => resolve();
-                utterance.onerror = (e) => resolve(); // 發生錯誤也繼續，避免卡死
+                utterance.onerror = (e) => resolve(); // 發生錯誤也繼續
 
                 window.speechSynthesis.speak(utterance);
             });
